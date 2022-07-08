@@ -1,13 +1,22 @@
 {
-    "id": "nodebb-plugin-emailer-mailjet"
-   ,"name": "NodeBB Mailjet Plugin"
-   ,"description": "An emailer plugin for NodeBB using Mailjet as a third party service"
-   ,"url": "https://github.com/pichalite/nodebb-plugin-emailer-mailjet"
-   ,"library": "./library.js"
-   ,"templates": "templates"
-   ,"hooks": [
-        { "hook": "filter:email.send", "method": "send" },
-        { "hook": "filter:admin.header.build", "method": "admin.menu" },
-        { "hook": "static:app.load", "method": "init" }
-    ]
+	"id": "nodebb-plugin-emailer-mailjet",
+	"url": "https://github.com/ktr41n/nodebb-plugin-emailer-mailjet",
+	"hooks": [
+		{
+			"hook": "static:app.load", "method": "init"
+		},
+		{
+			"hook": "filter:admin.header.build", "method": "addAdminNavigation"
+		},
+		{
+			"hook": "static:email.send", "method": "send" 
+		}
+	],
+	"staticDirs": {
+		"static": "./static"
+	},	
+	"modules": {
+		"../admin/plugins/emailer-mailjet.js": "./static/lib/admin.js"
+	},
+	"templates": "static/templates"
 }

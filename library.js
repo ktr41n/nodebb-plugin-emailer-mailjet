@@ -1,25 +1,27 @@
-var winston = require.main.require('winston');
-var Meta = require.main.require('./src/meta');
+'use strict';
 
-var Emailer = {};
-var Mailjet = require('node-mailjet');
+const controllers = require('./lib/controllers');
+const Meta = require.main.require('./src/meta');
+const winston = require.main.require('winston');
+const Mailjet = require('node-mailjet');
 var server;
 
-Emailer.init = function(params, callback) {
-	function render(req, res, next) {
-		res.render('admin/plugins/emailer-mailjet', {});
-	}
+const Emailer = {};
 
-	Meta.settings.get('mailjet', function(err, settings) {
+Emailer.init = function (params, callback) {
+	const router = params.router;
+	const hostMiddleware = params.middleware;
+
+	Meta.settings.get('emailer-mailjet', function(err, settings) {
 		if (!err && settings && settings.apiKey && settings.secretKey) {
-			server = Mailjet.connect(settings.apiKey, settings.secretKey);
+			server = Mailjet.apiConnect(settings.apiKey, settings.secretKey);
 		} else {
 			winston.error('[plugins/emailer-mailjet] API key or SECRET Key not set!');
 		}
 	});
 
-	params.router.get('/admin/plugins/emailer-mailjet', params.middleware.admin.buildHeader, render);
-	params.router.get('/api/admin/plugins/emailer-mailjet', render);
+	router.get('/admin/plugins/emailer-mailjet', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
+	router.get('/api/admin/plugins/emailer-mailjet', controllers.renderAdminPage);
 
 	callback();
 };
@@ -30,42 +32,44 @@ Emailer.send = function(data, callback) {
 		return callback(null, data);
 	}
 
-	var sendEmail = server.post('send');
-	var emailData = {
-		'FromEmail': data.from,
-		'FromName': data.from_name,
-		'Subject': data.subject,
-		'Text-part': data.plaintext,
-		'Html-part': data.html,
-		'Recipients': [{
-			'Email': data.to
-		}]
-	};
-
-	sendEmail
-		.request(emailData)
-		.on('success', handleSuccess)
-		.on('error', handleError);
-
-	function handleSuccess(data) {
-		callback(null, data);
-	}
-
-	function handleError(err) {
-		callback(err);
-	}
+	const request = server
+		.post('send', {version: 'v3.1'})
+		.request({
+			Messages: [
+				{
+					From: {
+						Email: data.from,
+						Name: data.from_name
+					},
+					To: [
+						{
+							Email: data.to
+						}
+					],
+					Subject: data.subject,
+					TextPart: data.plaintext,
+					HTMLPart: data.html
+				}
+			]
+		});
+	
+	request
+		.then((result) => {
+			callback(null, result.body);
+		})
+		.catch((err) => {
+			callback(err);
+		});
 };
 
-Emailer.admin = {
-	menu: function(custom_header, callback) {
-		custom_header.plugins.push({
-			"route": '/plugins/emailer-mailjet',
-			"icon": 'fa-envelope-o',
-			"name": 'Emailer (Mailjet)'
-		});
+Emailer.addAdminNavigation = function (header, callback) {
+	header.plugins.push({
+		route: '/plugins/emailer-mailjet',
+		icon: 'fa-envelope-o',
+		name: 'Emailer (Mailjet)',
+	});
 
-		callback(null, custom_header);
-	}
+	callback(null, header);
 };
 
 module.exports = Emailer;
