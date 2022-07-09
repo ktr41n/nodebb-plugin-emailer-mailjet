@@ -2,15 +2,9 @@
 	"id": "nodebb-plugin-emailer-mailjet",
 	"url": "https://github.com/ktr41n/nodebb-plugin-emailer-mailjet",
 	"hooks": [
-		{
-			"hook": "static:app.load", "method": "init"
-		},
-		{
-			"hook": "filter:admin.header.build", "method": "addAdminNavigation"
-		},
-		{
-			"hook": "static:email.send", "method": "send" 
-		}
+		{ "hook": "static:app.load", "method": "init" },
+		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" },
+		{ "hook": "static:email.send", "method": "send" }
 	],
 	"staticDirs": {
 		"static": "./static"
